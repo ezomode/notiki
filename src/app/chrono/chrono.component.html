@@ -1,0 +1,168 @@
+<div class="container">
+  <!--<h2>Messages
+    <a class="float-right" [routerLink]="['/msg/add']">
+      <button type="button" class="btn btn-primary">Add</button>
+    </a>
+  </h2>-->
+  <div class="row">
+    <div class="col-sm">
+      <div class="card card-default">
+        <h4 class="card-header">Author</h4>
+        <div class="card-body">
+          <form [formGroup]="authorForm" (ngSubmit)="createAuthor()">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Name </label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" formControlName="name"/>
+              </div>
+              <label class="col-sm-3 col-form-label">Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="pass"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary col-sm-3 col-form-label float-right">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <br>
+    <div class="col-sm">
+      <div class="card card-default">
+        <h4 class="card-header">Reader</h4>
+        <div class="card-body">
+
+          <form [formGroup]="readerForm" (ngSubmit)="createReader()">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Name </label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" formControlName="name"/>
+              </div>
+              <label class="col-sm-3 col-form-label">Reader Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="readerPass"/>
+              </div>
+              <label class="col-sm-3 col-form-label">Author Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="authorPass"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary col-sm-3 col-form-label float-right">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <div class="row" *ngIf="notes.length != 0">
+
+  </div>
+  <ng-template #content let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title text-center">Notes from {{notes[0].authorName}}</h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <table class="table table-bordered mt-5">
+        <thead>
+        <tr>
+          <th>Title</th>
+          <th>Text</th>
+          <!--          <th>Release Date</th>-->
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let item of notes; let i = index;">
+          <td style="width: 25%">
+            <p>{{item.title}}</p>
+            <p class="text-muted small">{{item.created.toLocaleString()}}</p>
+          </td>
+          <td>
+            <p>{{item.text}}</p>
+          </td>
+          <!--          <td>{{item.releaseDate}}</td>-->
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-light" ngbAutofocus (click)="modal.close('Close click')">Close</button>
+    </div>
+  </ng-template>
+  <div class="row">
+    <div class="col-sm">
+      <div class="card">
+        <h4 class="card-header">Send Note</h4>
+        <div class="card-body">
+
+          <form [formGroup]="sendForm" (ngSubmit)="sendNote()">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Author Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="authorPass"/>
+              </div>
+              <label class="col-sm-3 col-form-label">Reader Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="readerPass"/>
+              </div>
+              <!--              <label class="col-sm-3 col-form-label">Pass </label>-->
+              <!--              <input type="password" class="form-control" formControlName="pass"/>-->
+              <!--              <br>-->
+              <label class="col-sm-3 col-form-label">Title </label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" formControlName="title"/>
+              </div>
+              <br>
+              <label class="col-sm-3 col-form-label">Text </label>
+              <div class="col-sm-9">
+                <textarea type="text" class="md-textarea md-textarea-auto form-control"
+                          formControlName="text"></textarea>
+              </div>
+              <br>
+              <label class="col-sm-3 col-form-label">Release Date </label>
+              <div class="col-sm-9">
+                <div class="form-group">
+                  <input class="form-control" placeholder="yyyy-mm-dd" name="dp"
+                         ngbDatepicker #d="ngbDatepicker"
+                         formControlName="release" [ngModel]="releaseDate" type="text"/>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-light float-right" (click)="d.toggle()" type="button">📅</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <br>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary col-sm-3 col-form-label float-right">Send</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <br>
+    <div class="col-sm">
+      <div class="card">
+        <h4 class="card-header">Find Notes</h4>
+        <div class="card-body">
+
+          <form [formGroup]="notesForm" (ngSubmit)="getNotes()">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Pass </label>
+              <div class="col-sm-9">
+                <input type="password" class="form-control" formControlName="pass"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary col-sm-3 col-form-label float-right">Get</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

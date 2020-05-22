@@ -1,0 +1,19 @@
+{
+  "hosting": [
+    {
+      "target": "memoria",
+      "public": "dist/memoria",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}

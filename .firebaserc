@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "notiki-x": {
+      "hosting": {
+        "memoria": [
+          "notiki-x"
+        ]
+      }
+    }
+  }
+}
