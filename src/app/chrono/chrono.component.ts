@@ -21,8 +21,6 @@ export class Note {
 })
 export class ChronoComponent implements OnInit {
 
-  authorForm: FormGroup;
-  readerForm: FormGroup;
   sendForm: FormGroup;
   notesForm: FormGroup;
 
@@ -31,6 +29,7 @@ export class ChronoComponent implements OnInit {
 
   date = new Date();
   releaseDate = {day: this.date.getDate(), month: this.date.getMonth() + 1, year: this.date.getFullYear()};
+  gh_key: string;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -42,21 +41,11 @@ export class ChronoComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.authorForm = this.formBuilder.group({
-      name: ['', Validators.compose([])],
-      pass: ['', Validators.compose([Validators.required])],
-    });
-
-    this.readerForm = this.formBuilder.group({
-      name: ['', Validators.compose([])],
-      readerPass: ['', Validators.compose([Validators.required])],
-      authorPass: ['', Validators.compose([Validators.required])],
-    });
+    this.api.gh_key.subscribe(k => this.gh_key = k);
 
     this.sendForm = this.formBuilder.group({
-      authorPass: ['', Validators.compose([Validators.required])],
-      readerPass: ['', Validators.compose([Validators.required])],
-      // pass: ['', Validators.compose([Validators.required])],
+      authorName: ['', Validators.compose([Validators.required])],
+      pass: ['', Validators.compose([Validators.required])],
       title: ['', Validators.compose([Validators.required])],
       text: ['', Validators.compose([Validators.required])],
       release: ['', Validators.compose([Validators.required])],
@@ -75,45 +64,8 @@ export class ChronoComponent implements OnInit {
       });
   }
 
-  createAuthor() {
-    let name = this.authorForm.controls.name.value;
-    let pass = this.authorForm.controls.pass.value;
-
-    this.api.createAuthor(name, pass)
-      .subscribe(
-        (res) => {
-          console.log('CREATED: ' + JSON.stringify(res));
-          this.as.success('Created');
-          this.analytics.logEvent('author');
-        },
-        (err) => {
-          console.log(err);
-          this.as.error('Error: ' + err['message']);
-        });
-  }
-
-  createReader() {
-    let name = this.readerForm.controls.name.value;
-    let readerPass = this.readerForm.controls.readerPass.value;
-    let authorPass = this.readerForm.controls.authorPass.value;
-
-    this.api.createReader(name, readerPass, authorPass)
-      .subscribe(
-        (res) => {
-          console.log('CREATED: ' + JSON.stringify(res));
-          this.as.success('Created');
-          this.analytics.logEvent('reader');
-        },
-        (err) => {
-          console.log(err);
-          this.as.error('Error: ' + err['message']);
-        });
-  }
-
   sendNote() {
-    let authorPass = this.sendForm.controls.authorPass.value;
-    let readerPass = this.sendForm.controls.readerPass.value;
-    // let pass = this.sendForm.controls.pass.value;
+    let pass = this.sendForm.controls.pass.value;
     let title = this.sendForm.controls.title.value;
     let text = this.sendForm.controls.text.value;
     let release = this.sendForm.controls.release.value;
@@ -125,7 +77,7 @@ export class ChronoComponent implements OnInit {
     date.setMonth(release['month'] - 1);
     date.setFullYear(release['year']);
 
-    this.api.sendNote(authorPass, readerPass, title, text, date.getTime())
+    this.api.sendNote(pass, title, text, date.getTime())
       .subscribe(
         (res) => {
           console.log('CREATED: ' + JSON.stringify(res));

@@ -1,0 +1,24 @@
+<div class="card card-default">
+  <h4 class="card-header">Setup</h4>
+  <div class="card-body">
+    <form [formGroup]="setupForm" (ngSubmit)="setupGH()">
+      <div class="form-group row">
+        <label class="col-sm-3 col-form-label">API Key </label>
+        <div class="col-sm-9">
+          <input type="text" class="form-control" formControlName="api_key"/>
+        </div>
+        <label class="col-sm-3 col-form-label">Pass </label>
+        <div class="col-sm-9">
+          <input type="password" class="form-control" formControlName="pass"/>
+        </div>
+        <!--        <label class="col-sm-3 col-form-label">Repeat Pass </label>-->
+        <!--        <div class="col-sm-9">-->
+        <!--          <input type="password" class="form-control" formControlName="pass_repeat"/>-->
+        <!--        </div>-->
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary col-sm-3 col-form-label float-right">Create</button>
+      </div>
+    </form>
+  </div>
+</div>

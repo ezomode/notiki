@@ -1,9 +1,11 @@
-import {Injectable} from '@angular/core';
-import {from, Observable, of, throwError} from 'rxjs';
+import {Injectable, OnInit} from '@angular/core';
+import {BehaviorSubject, from, Observable, of} from 'rxjs';
 import {environment} from '../environments/environment';
-import {HttpClient, HttpErrorResponse} from '@angular/common/http';
-import {catchError, flatMap, map} from 'rxjs/operators';
+import {HttpClient} from '@angular/common/http';
+import {flatMap, map} from 'rxjs/operators';
 import {Note} from './chrono/chrono.component';
+import {Octokit} from '@octokit/rest';
+import {AlertService} from './alert.service';
 
 export class Message {
   id: string;
@@ -12,26 +14,33 @@ export class Message {
   text: string;
 }
 
-const decryptP = (pass: string, s: string) => from(decrypt(pass, s));
+export function encryptP(pass: string, payload: string) {
+  return from(encrypt(pass, payload)).pipe(flatMap(n => n))
+    ;
+}
+
+export function decryptP(pass: string, s: string) {
+  return from(decrypt(pass, s)).pipe(flatMap(n => n));
+}
+
+const encryptedGHToken = '76ffb769ae02d5333b7c2195CokTlfRFy/6OB3H+8YfIPZaRlW+fg8k+mzh34McdL2JElZj3x05SdFKnTnPZ/oRI9tMotT84jxM=';
+
+const gh_key_path = 'gh_key.txt';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ApiService {
+export class ApiService implements OnInit {
   private apiUrl = environment.server;
-  private httpOptions: any;
+  gh_key: BehaviorSubject<string> = new BehaviorSubject(null);
 
   private messages: Message[] = [];
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private as: AlertService) {
   }
 
-  createAuthor(name: string, pass: string) {
-    return this.http.post(this.apiUrl + '/author/' + name, {'authorPass': pass});
-  }
-
-  createReader(name: string, readerPass: string, authorPass: string) {
-    return this.http.post(this.apiUrl + '/reader/' + name, {'authorPass': authorPass, 'readerPass': readerPass});
+  ngOnInit() {
+    // this.getGHKey();
   }
 
   getMessages(): Observable<Message[]> {
@@ -48,15 +57,13 @@ export class ApiService {
     return of(message);
   }
 
-  sendNote(authorPass: string, readerPass: string, title: string, text: string, releaseDate: number): Observable<Object> {
-    return from(encrypt(readerPass, title))
+  sendNote(pass: string, title: string, text: string, releaseDate: number): Observable<Object> {
+    return encryptP(pass, title)
       .pipe(flatMap(titleEnc =>
-        from(encrypt(readerPass, text))
+        from(encrypt(pass, text))
           .pipe(flatMap(textEnc =>
             this.http.post(this.apiUrl + '/note/' + name, {
-              'authorPass': authorPass,
-              'readerPass': readerPass,
-              // 'pass': pass,
+              'pass': pass,
               'release': releaseDate,
               'title': titleEnc,
               'text': textEnc
@@ -90,29 +97,65 @@ export class ApiService {
       .pipe(flatMap(n => n));
   }
 
+  saveKeyToGH(pass: string, token: string) {
 
-  errorHandler(error: HttpErrorResponse) {
-    if (error.error instanceof ErrorEvent) {
-      console.error('An error occurred:', error.error.message); // A client-side or network error occurred. Handle it accordingly.
-    } else {
-      // The backend returned an unsuccessful response code.
-      // The response body may contain clues as to what went wrong,
-      console.error(
-        `Backend returned code ${error.status}, ` +
-        `JSON: ${JSON.stringify(error)}`);
-    }
-    return throwError('your request failed.');
+    this.savePass(pass);
+    this.saveKey(token);
+
+    const octokit = new Octokit({auth: this.getKey(), log: console});
+
+    this.getGHKey()
+      .then(file => {
+          console.log(file);
+          console.log(file.data.sha);
+          return octokit.repos.deleteFile({
+            owner: 'ezomode',
+            repo: 'notiki',
+            path: gh_key_path,
+            message: 'delete gh_key',
+            sha: file.data.sha
+          });
+        }
+      )
+      .then(_ => {
+        encryptP(pass, token)
+          .pipe(flatMap(tokenEnc =>
+            octokit.repos.createOrUpdateFile({
+              owner: 'ezomode',
+              repo: 'notiki',
+              path: gh_key_path,
+              message: 'update gh_key',
+              content: btoa(tokenEnc),
+              'committer.name': '',
+              'committer.email': '',
+            })
+          ))
+          .toPromise()
+          .then(res => console.log(res));
+      }
+    );
   }
 
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
+  getGHKey() {
+    return new Octokit({auth: this.getKey(), log: console})
+      .repos
+      .getContents({owner: 'ezomode', repo: 'notiki', path: gh_key_path});
+  }
 
-      // TODO: send the error to remote logging infrastructure
-      console.error(error); // log to console instead
+  savePass(s: string) {
+    return localStorage.setItem('password', s);
+  }
 
-      // Let the app keep running by returning an empty result.
-      return of(result as T);
-    };
+  getPass() {
+    return localStorage.getItem('password');
+  }
+
+  saveKey(s: string) {
+    return localStorage.setItem('gh_key', s);
+  }
+
+  getKey() {
+    return localStorage.getItem('gh_key');
   }
 }
 
@@ -149,7 +192,11 @@ async function encrypt(password: string, plaintext: string): Promise<string> {
   const ivHex = Array.from(iv).map(b => ('00' + b.toString(16)).slice(-2)).join(''); // iv as hex string
   console.log('encrypt ivHex: ' + ivHex);
 
-  return ivHex + ctBase64;                                                             // return iv+ciphertext
+  let s = ivHex + ctBase64;
+
+  console.log(s);
+
+  return s;                                                             // return iv+ciphertext
 }
 
 
@@ -183,5 +230,9 @@ async function decrypt(password: string, ciphertext: string): Promise<string> {
   const alg = {name: 'AES-GCM', iv: new Uint8Array(iv)};                            // specify algorithm to use
   const plainBuffer = await crypto.subtle.decrypt(alg, key, ctUint8);                 // decrypt ciphertext using key
                                                                                       // decode password from UTF-8
-  return new TextDecoder().decode(plainBuffer);                                                                   // return the plaintext
+  let s = new TextDecoder().decode(plainBuffer);
+
+  console.log(s);
+
+  return s;                                                                   // return the plaintext
 }
